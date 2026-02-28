@@ -1,0 +1,506 @@
+<!doctype html>
+<html lang="ar">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>اختبار إلكتروني</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        direction: rtl;
+        font-weight: 900;
+        -webkit-user-select: none;
+        -moz-user-select: none;
+        -ms-user-select: none;
+        user-select: none;
+      }
+
+      .hidden {
+        display: none !important;
+      }
+
+      #login-container {
+        max-width: 400px;
+        margin: 100px auto;
+        padding: 30px;
+        background-color: #ffffff;
+        border: 2px solid #007bff;
+        border-radius: 15px;
+        box-shadow: 0 5px 25px rgba(0, 123, 255, 0.2);
+        text-align: center;
+        transition: all 0.3s ease-in-out;
+      }
+
+      #login-container label {
+        display: block;
+        font-size: 18px;
+        color: #333;
+        margin-bottom: 8px;
+        text-align: right;
+      }
+
+      #login-container input {
+        width: 100%;
+        padding: 12px;
+        margin-bottom: 20px;
+        font-size: 16px;
+        border: 1px solid #ccc;
+        border-radius: 8px;
+        box-sizing: border-box;
+      }
+
+      #login-container button {
+        width: 100%;
+        background-color: #007bff;
+        color: white;
+        padding: 12px 0;
+        font-size: 18px;
+        font-weight: bold;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: background-color 0.3s;
+      }
+
+      #login-container button:hover {
+        background-color: #0056b3;
+      }
+
+      #result {
+        margin-top: 20px;
+        text-align: right;
+      }
+
+      #timer {
+        font-size: 20px;
+        color: red;
+        font-weight: bold;
+      }
+
+      h2 {
+        font-size: 22px;
+        font-weight: 900;
+        color: #000000;
+      }
+
+      label {
+        font-size: 18px;
+        font-weight: 900;
+        color: #333333;
+      }
+
+      #next-button {
+        position: absolute;
+        left: 20px;
+        bottom: 20px;
+        padding: 10px 20px;
+        font-weight: 900;
+      }
+
+      .correct-answer {
+        color: green;
+        font-weight: 900;
+      }
+
+      .wrong-answer {
+        color: red;
+        font-weight: 900;
+      }
+
+      ul {
+        list-style-type: none;
+        padding: 0;
+      }
+
+      ul li {
+        margin-bottom: 15px;
+        background-color: #f0f4f8;
+        padding: 10px;
+        border-radius: 6px;
+        font-weight: 900;
+        color: #000;
+        font-size: 18px;
+      }
+
+      #result h2,
+      #result h3,
+      #result p {
+        font-weight: 900;
+        color: #000;
+        font-size: 18px;
+        text-align: right;
+      }
+
+      #retry-button {
+        padding: 10px 20px;
+        font-weight: bold;
+        background-color: #007bff;
+        color: #fff;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        margin-top: 20px;
+      }
+    </style>
+  </head>
+  <body>
+    <h2>التدريب علي اختبارات الجهاز المركزى</h2>
+
+    <div id="login-container">
+      <label for="password">🔒 أدخل كلمة المرور:</label>
+      <input id="password" type="password" placeholder="مثال: 12345678" />
+      <label for="duration">⏳ حدد مدة الاختبار (بالدقائق):</label>
+      <input id="duration" type="number" value="5" min="1" />
+      <button onclick="checkPassword()">🚀 دخول</button>
+    </div>
+
+    <div class="hidden" id="quiz">
+      <div id="timer">5:00</div>
+      <div id="question-info">السؤال 1 من 20</div>
+      <form id="quizForm">
+        <div id="question-container"></div>
+        <button id="next-button" onclick="nextQuestion(event)" type="button">
+          التالي
+        </button>
+      </form>
+    </div>
+
+    <div class="hidden" id="result"></div>
+
+    <script>
+      const questions = [
+        {
+          question:
+            "الرمز الوميض على شاشة الكمبيوتر عند فتح أي محرر نصوص يُسمى",
+          options: ["المؤشر", "شعار", "كف اليد", "الفأرة"],
+          answer: "المؤشر",
+        },
+        {
+          question:
+            "أي جهاز إدخال يُستخدم بشكل أساسي للتنقل والتفاعل مع الأيقونات والقوائم في الواجهات الرسومية؟",
+          options: [
+            "الميكروفون",
+            "الماسح الضوئي",
+            "الماوس (الفأرة)",
+            "كاميرا الويب",
+          ],
+          answer: "الماوس (الفأرة)",
+        },
+        {
+          question: "ماذا تفعل إذا توقفت لوحة المفاتيح عن العمل فجأة؟",
+          options: [
+            "أعمل إعادة تشغيل للجهاز فوراً",
+            "أوصلها بجهاز آخر للتأكد من وجود خلل",
+            "أفصلها وأستخدم الماوس فقط",
+            "أعمل إعادة تشغيل للجهاز فوراً",
+          ],
+          answer: "أوصلها بجهاز آخر للتأكد من وجود خلل",
+        },
+        {
+          question: "إذا تعطلت الفأرة أثناء العمل على الكمبيوتر، ماذا تفعل؟",
+          options: [
+            "لا يمكن متابعة العمل",
+            "إغلاق الجهاز",
+            "استخدام لوحة المفاتيح",
+            "الانتظار حتى تعمل الماوس",
+            "تجربة العمل بها على جهاز آخر لاكتشاف إذا كان بها عطل أم لا",
+          ],
+          answer: "تجربة العمل بها على جهاز آخر لاكتشاف إذا كان بها عطل أم لا",
+        },
+        {
+          question: "عند حدوث عطل في الكمبيوتر، ما أول خطوة يجب القيام بها؟",
+          options: [
+            "أفتح الجهاز وأصلح القطع الداخلية",
+            "أعمل فورمات للجهاز",
+            "أتأكد أولًا أن الفيشة موصولة بالكهرباء",
+            "أغير الشاشة فورًا",
+          ],
+          answer: "أتأكد أولًا أن الفيشة موصولة بالكهرباء",
+        },
+        {
+          question: "لو الطابعة شكلها وقفت عن الشغل، إيه أول حاجة تعملها؟",
+          options: [
+            "تطبع الملف تاني",
+            "تراجع الملف في 'معاينة قبل الطباعة'",
+            "تتأكد إن الطابعة فيها ورق ومتصلة بالكهرباء ومفتوحة",
+            "تراجع ضمان الطابعة",
+          ],
+          answer: "تتأكد إن الطابعة فيها ورق ومتصلة بالكهرباء ومفتوحة",
+        },
+        {
+          question: "أي من الآتي ليس جهاز إدخال؟",
+          options: [
+            "لوحة المفاتيح",
+            "الطابعة",
+            "الكاميرا الرقمية",
+            "الماسح الضوئي",
+          ],
+          answer: "الطابعة",
+        },
+        {
+          question: "أي مما يلي يُعد جهاز إدخال وإخراج معًا؟",
+          options: ["الشاشة", "الذاكرة الرقمية", "الطابعة", "الفأرة"],
+          answer: "الذاكرة الرقمية",
+        },
+        {
+          question: "أي جهاز إخراج يُستخدم عادةً لعرض النصوص والصور؟",
+          options: ["شاشة", "ماسح ضوئي", "ماوس", "لوحة مفاتيح"],
+          answer: "شاشة",
+        },
+        {
+          question:
+            "هو نوع من منصات الاتصال التي تسمح لأعضاء المجموعة أو الفريق أو المنظمة بتبادل المعلومات بسرعة وسهولة في الوقت الفعلي من خلال الرسائل الفورية. ما هو المسمى الذي يطلق عليه؟",
+          options: ["شات فردي", "شات جماعي", "شات نصي", "شات مرئي"],
+          answer: "شات جماعي",
+        },
+        {
+          question: "ما هي الوظيفة الأساسية للوحة اللمس في اللابتوب؟",
+          options: [
+            "لإنتاج نسخ ورقية من المستندات",
+            "لالتقاط الصور أو المستندات وتحويلها إلى بيانات رقمية",
+            "لتسجيل الصوت",
+            "للتحكم في حركة المؤشر",
+          ],
+          answer: "للتحكم في حركة المؤشر",
+        },
+        {
+          question:
+            "ما هو المكان الذي تُخزَّن فيه البرامج والملفات والبيانات في الحاسوب؟",
+          options: ["CPU", "Hard Disk", "RAM", "Motherboard"],
+          answer: "Hard Disk",
+        },
+        {
+          question: "أين يتم تخزين البيانات والبرامج عندما يستخدمها المعالج؟",
+          options: [
+            "الذاكرة الرئيسية",
+            "الذاكرة الثانوية",
+            "ذاكرة القرص",
+            "ذاكرة البرنامج",
+          ],
+          answer: "الذاكرة الرئيسية",
+        },
+        {
+          question:
+            "إذا أراد المستخدم حذف مجلد في نظام تشغيل الأقراص، فسيستخدم أمر ________.",
+          options: ["REN", "CD", "DEL", "لا شيء مما سبق"],
+          answer: "DEL",
+        },
+        {
+          question:
+            "كيف يمكننا إظهار أيقونة جهاز الكمبيوتر على سطح المكتب إذا لم تكن موجودة؟",
+          options: [
+            "من خلفية الشاشة",
+            "من الإعدادات",
+            "من خصائص العرض",
+            "من المستكشف",
+          ],
+          answer: "من خصائص العرض",
+        },
+        {
+          question: "ما الخاصية التي تساعد في تخزين ملفات ذات حجم أكبر؟",
+          options: [
+            "تسريع المعالج",
+            "تحسين دقة الشاشة",
+            "توفير الطاقة",
+            "زيادة سعة القرص الصلب",
+          ],
+          answer: "زيادة سعة القرص الصلب",
+        },
+        {
+          question: "ما الخاصية التي تسمح بعرض أو فتح عدة ملفات في نفس الوقت؟",
+          options: [
+            "تعدد المهام / Multitasking",
+            "التحكم في الذاكرة",
+            "تخزين البيانات",
+            "تحديث النظام",
+          ],
+          answer: "تعدد المهام / Multitasking",
+        },
+        {
+          question:
+            "تُسمى الملحقات التي يتم توصيلها بالحاسوب ولكنها ليست جزءًا منه بالأجهزة الطرفية.",
+          options: ["صح", "خطأ"],
+          answer: "صح",
+        },
+        {
+          question: "كل الاجابات صحيحه لغلق ملف ماعدا واحدة هي____",
+          options: [
+            "نضغط غلق ملف مرتين",
+            "Alt + F4",
+            "نضغط علي X",
+            "نضغط غلق ملف",
+          ],
+          answer: "نضغط غلق ملف مرتين",
+        },
+        {
+          question: "أي من البرامج التالية لا نستخدم فيها الصور بشكل أساسي؟",
+          options: [
+            "برنامج تحرير الصور",
+            "برنامج معالجة النصوص",
+            "برنامج العروض التقديمية",
+            "برنامج تصميم الجرافيك",
+          ],
+          answer: "برنامج معالجة النصوص",
+        },
+      ];
+      let currentQuestion = 0;
+      let score = 0;
+      let timer;
+      let timeLeft;
+      let userAnswers = [];
+
+      function shuffle(array) {
+        for (let i = array.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [array[i], array[j]] = [array[j], array[i]];
+        }
+      }
+
+      function shuffleQuestions() {
+        shuffle(questions);
+        questions.forEach((q) => shuffle(q.options));
+      }
+
+      function checkPassword() {
+        const passwordInput = document.getElementById("password").value;
+        const durationInput =
+          parseInt(document.getElementById("duration").value) || 10;
+        timeLeft = durationInput * 60;
+
+        if (passwordInput === "1018") {
+          shuffleQuestions();
+          document.getElementById("login-container").classList.add("hidden");
+          document.getElementById("quiz").classList.remove("hidden");
+          document.getElementById("result").classList.add("hidden");
+          currentQuestion = 0;
+          score = 0;
+          userAnswers = [];
+          loadQuestion();
+          startTimer();
+        } else {
+          alert("🚫 المحاولة غير صحيحة! تأكد من كتابة كلمة السر بشكل دقيق.");
+        }
+      }
+
+      function loadQuestion() {
+        const questionContainer = document.getElementById("question-container");
+        questionContainer.innerHTML = `
+      <h2>${questions[currentQuestion].question}</h2>
+      ${questions[currentQuestion].options
+        .map(
+          (option) => `
+        <label>
+          <input type="radio" name="option" value="${option}" />
+          ${
+            option === questions[currentQuestion].answer
+              ? `<span class="correct">${option}</span>`
+              : option
+          }
+        </label><br>
+      `,
+        )
+        .join("")}
+    `;
+        document.getElementById("question-info").textContent = `السؤال ${
+          currentQuestion + 1
+        } من ${questions.length}`;
+      }
+
+      function nextQuestion(event) {
+        event.preventDefault();
+        const selected = document.querySelector('input[name="option"]:checked');
+        if (!selected) return alert("اختر إجابة.");
+        userAnswers[currentQuestion] = selected.value;
+        if (selected.value === questions[currentQuestion].answer) score++;
+        currentQuestion++;
+        if (currentQuestion < questions.length) {
+          loadQuestion();
+        } else {
+          clearInterval(timer);
+          showResults();
+        }
+      }
+
+      function showResults(timeUp = false) {
+        document.getElementById("quiz").classList.add("hidden");
+        const resultDiv = document.getElementById("result");
+        resultDiv.classList.remove("hidden");
+
+        const percent = ((score / questions.length) * 100).toFixed(1);
+
+        let feedback = "";
+        if (percent == 100) {
+          feedback = "أنت بطل! برافو عليك 👏";
+        } else if (percent >= 80) {
+          feedback = "ممتاز! واضح إنك مذاكر كويس 💪";
+        } else if (percent >= 60) {
+          feedback = "كويس، بس محتاج تراجع شوية 🙂";
+        } else if (percent >= 40) {
+          feedback = "راجع الدروس تاني وحاول تركز أكتر 📚";
+        } else {
+          feedback = "ابدأ من الأول وراجع كويس، شد حيلك! 💡";
+        }
+
+        let warningMsg = "";
+        if (timeUp && currentQuestion < questions.length) {
+          warningMsg = `
+        <p style="color: red;">⏰ انتهى الوقت قبل إكمال جميع الأسئلة.</p>
+        <p>في المرة الجاية حاول تحل الأسئلة بشكل أسرع علشان تلحق تكمل 💡</p>
+      `;
+        }
+
+        let review = "<h3>مراجعة الإجابات:</h3><ul>";
+        questions.forEach((q, i) => {
+          const ua = userAnswers[i] || "لم يُجب";
+          const correct = q.answer;
+          const isCorrect = ua === correct;
+          review += `
+        <li>
+          <strong>السؤال ${i + 1}:</strong> ${q.question}<br>
+          إجابتك: <span class="${
+            isCorrect ? "correct-answer" : "wrong-answer"
+          }">${ua}</span><br>
+          الإجابة الصحيحة: <span class="correct-answer">${correct}</span><br>
+          <strong>التفسير:</strong> ${q.explanation || "لا يوجد تفسير."}
+        </li>
+      `;
+        });
+        review += "</ul>";
+
+        resultDiv.innerHTML = `
+      ${warningMsg}
+      <h2>نتيجة الاختبار</h2>
+      <p>${score} من ${questions.length} | النسبة: ${percent}%</p>
+      <p>${feedback}</p>
+      ${review}
+      <button id="retry-button" onclick="location.reload()">إعادة المحاولة</button>
+    `;
+      }
+
+      function startTimer() {
+        timer = setInterval(() => {
+          timeLeft--;
+          const minutes = Math.floor(timeLeft / 60);
+          const seconds = timeLeft % 60;
+          document.getElementById("timer").textContent = `${minutes}:${
+            seconds < 10 ? "0" : ""
+          }${seconds}`;
+          if (timeLeft <= 0) {
+            clearInterval(timer);
+            alert("انتهى الوقت!");
+            showResults(true);
+          }
+        }, 1000);
+      }
+
+      document
+        .getElementById("quizForm")
+        .addEventListener("keypress", function (event) {
+          if (event.key === "Enter") {
+            event.preventDefault();
+            nextQuestion(event);
+          }
+        });
+    </script>
+  </body>
+</html>
